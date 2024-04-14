@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using courses_dotnet_api.Src.DTOs.Account;
 using courses_dotnet_api.Src.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -36,5 +38,49 @@ public class AccountController : BaseApiController
         AccountDto? accountDto = await _accountRepository.GetAccountAsync(registerDto.Email);
 
         return TypedResults.Ok(accountDto);
+    }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(LoginDto loginDto)
+    {
+        var userEmail = await _userRepository.UserExistsByEmailAsync(loginDto.Email);
+
+        if (!userEmail)
+        {
+            return Unauthorized("Credentials are invalid");
+        }
+
+        var passwordDto = await _userRepository.GetPasswordAsync(loginDto.Email);
+
+        if(passwordDto == null)
+        {
+            return Unauthorized("Credentials are invalid");
+        }
+
+        if(!VerifyPassword(loginDto.Password, passwordDto.PasswordHash, passwordDto.PasswordSalt))
+        {
+            return Unauthorized("Credentials are invalid");
+        }
+
+        AccountDto? accountDto = await _accountRepository.GetAccountAsync(loginDto.Email);
+
+        return Ok(accountDto); 
+    }
+
+    private bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
+    {
+        using var hmac = new HMACSHA512(passwordSalt);
+        var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+
+        for (int i = 0; i < computedHash.Length; i++)
+        {
+            if (computedHash[i] != passwordHash[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+        
     }
 }
