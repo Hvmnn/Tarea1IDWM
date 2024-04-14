@@ -30,7 +30,7 @@ public class UserRepository : IUserRepository
 
     public async Task<PasswordDto?> GetPasswordAsync(string email)
     {
-        var user = await _dataContext.Users.SingleOrDefaultAsync(x => x.Email == email); //BUSCAR OTRA FORMA PARA REEMPLAZAR EL .SINGLEORDEFAULTASYNC
+        var user = await _dataContext.Users.SingleOrDefaultAsync(x => x.Email == email);
 
         if(user == null)
         {
